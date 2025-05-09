@@ -1,33 +1,70 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi } from '@reduxjs/toolkit/query/react';
+import type { BaseQueryFn } from '@reduxjs/toolkit/query';
+import type { AuthResponse, SessionIdResponse, WatchmenTokenResponse } from '../types/auth';
+import { getDeviceId } from '../utils/getDeviceId';
+
+type CustomQueryArgs = {
+  url: string;
+  method?: string;
+  body?: any;
+  headers?: HeadersInit;
+};
+
+const dynamicBaseQuery: BaseQueryFn<CustomQueryArgs, unknown, unknown> = async (
+  { url, method = 'GET', body, headers }
+) => {
+  try {
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(headers || {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      return { error: { status: response.status, data } };
+    }
+
+    return { data };
+  } catch (error: any) {
+    return { error: { status: 'FETCH_ERROR', data: error.message } };
+  }
+};
+
 export const authApi = createApi({
   reducerPath: 'authApi',
-  baseQuery: fetchBaseQuery({ baseUrl: 'https://user-auth-gateway-staging.viewtrade.in/uma/api/v1/auth/b2c/login' }),
+  baseQuery: dynamicBaseQuery,
   endpoints: (builder) => ({
-    auth: builder.mutation<{ accessToken: string }, { login: string; password: string }>({
-      query: ({ login, password }) => ({
-        url: '/basic',
+    auth: builder.mutation<AuthResponse , { login: string; password: string; baseUrl: string }>({
+      query: ({ login, password, baseUrl }) => ({
+        url: `${baseUrl}/basic`,
         method: 'POST',
-        body: { login, password, device_id : "0"
- },
- headers: {   firm: "397",}
+        body: { login, password, device_id: getDeviceId() },
+        headers: { firm: '397' },
       }),
     }),
-    getWatchmenToken: builder.mutation<{ token: string }, { accessToken: string }>({
-      query: ({ accessToken }) => ({
-        url: '/watchmen',
-        method: 'GET',
-        headers: { Authorization: `Bearer ${accessToken}` },
+
+    getWatchmenToken: builder.mutation<WatchmenTokenResponse, { access_token: string; baseUrl: string }>({
+      query: ({ access_token, baseUrl }) => ({
+        url: `${baseUrl}/authentication-tokens`,
+        method: 'POST',
+        headers: { Authorization: `Bearer ${access_token}` },
       }),
     }),
-    getSessionId: builder.mutation<{ sessionId: string }, { watchmenToken: string }>({
-      query: ({ watchmenToken }) => ({
-        url: '/sso',
-        method: 'GET',
-        headers: { Authorization: `Bearer ${watchmenToken}` },
+
+    getSessionId: builder.mutation<SessionIdResponse, { watchmenToken: string; baseUrl: string }>({
+      query: ({ watchmenToken, baseUrl }) => ({
+        url: `${baseUrl}/platform`,
+        method: 'POST',
+        body: { token:watchmenToken, platform: 'uma' },
       }),
     }),
   }),
 });
+
 export const {
   useAuthMutation,
   useGetWatchmenTokenMutation,

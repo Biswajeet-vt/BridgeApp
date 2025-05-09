@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   useAuthMutation,
   useGetWatchmenTokenMutation,
   useGetSessionIdMutation,
 } from '../api/authApi';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { setSessionId } from '../api/authSlice';
+import type { RootState } from '../redux/store'; 
+import { useNavigate } from 'react-router-dom';
 export const LoginForm = () => {
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
@@ -13,15 +15,30 @@ export const LoginForm = () => {
   const [auth] = useAuthMutation();
   const [getWatchmenToken] = useGetWatchmenTokenMutation();
   const [getSessionId] = useGetSessionIdMutation();
+  const sessionId = useSelector((state: RootState) => state.auth.sessionId);
+  const navigate = useNavigate();
+  useEffect(() => {
+    dispatch(setSessionId(''));
+  }, [dispatch]);
+  useEffect(() => {
+    if (sessionId) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [sessionId, navigate]);
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { accessToken } = await auth({ login, password }).unwrap();
-      const { token: watchmenToken } = await getWatchmenToken({ accessToken }).unwrap();
-      const { sessionId } = await getSessionId({ watchmenToken }).unwrap();
-      dispatch(setSessionId(sessionId));
-      console.log('Logged in with sessionId:', sessionId);
-    } catch (err) {
+      const data  = await auth({ login, password, baseUrl: import.meta.env.VITE_USER_LOGIN_URL }).unwrap();
+      
+      let access_token=data?.login_basic?.tokens?.access_token
+      
+      const token = await getWatchmenToken({access_token,baseUrl:import.meta.env.VITE_USER_WATCHMEN_URL}).unwrap();
+
+      let watchmenToken=token?.data?.token
+      const sessionId  = await getSessionId({watchmenToken,baseUrl:import.meta.env.VITE_USER_SSO_URL}).unwrap();
+
+      dispatch(setSessionId(sessionId?.sessionId));
+       } catch (err) {
       console.error('Login failed:', err);
     }
   };
