@@ -1,6 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import type { BaseQueryFn } from '@reduxjs/toolkit/query';
-import type { AuthResponse, SessionIdResponse, WatchmenTokenResponse } from '../types/auth';
+import type { AuthResponse, MiddleWareResponse, SessionIdResponse, WatchmenTokenResponse } from '../types/auth';
 import { getDeviceId } from '../utils/getDeviceId';
 
 type CustomQueryArgs = {
@@ -62,6 +62,14 @@ export const authApi = createApi({
         body: { token:watchmenToken, platform: 'uma' },
       }),
     }),
+
+    getMiddlewareToken: builder.mutation<MiddleWareResponse, { sessionId: string|null; baseUrl: string }>({
+      query: ({ sessionId, baseUrl }) => ({
+        url: `${baseUrl}/authenticate`,
+        method: 'POST',
+        headers: { "watchmen-token":  `${sessionId}`,"firm-id":'397',"application-name":'NextGen' },
+      }),
+    }),
   }),
 });
 
@@ -69,4 +77,5 @@ export const {
   useAuthMutation,
   useGetWatchmenTokenMutation,
   useGetSessionIdMutation,
+  useGetMiddlewareTokenMutation
 } = authApi;
