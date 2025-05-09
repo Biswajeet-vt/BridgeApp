@@ -22,9 +22,12 @@ const Register = () => {
   const images = [FirstImg, SecondImg, FirstImg]
   const [register] = useRegisterMutation();
   const [passwordMismatch,setPasswordMismatch] =useState(false)
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
