@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import type { RootState } from './redux/store';
-
+import './App.css'
 import { LoginForm } from './components/Login';
 import Register from './components/Register';
 import type { JSX } from 'react';
